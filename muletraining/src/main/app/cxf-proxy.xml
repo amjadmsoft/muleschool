@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.4.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<mulexml:xslt-transformer name="xslt"
+		xsl-file="bank.xsl" doc:name="XSLT" />
+	<flow name="soapFlow1" doc:name="soapFlow1">
+		<http:inbound-endpoint exchange-pattern="request-response"
+			host="localhost" port="8082" path="bank" doc:name="HTTP" />
+		<cxf:jaxws-service doc:name="SOAP" serviceClass="training.IBankService" />
+		<component class="training.BankService" doc:name="Java" />
+	</flow>
+
+	<flow name="soapFlow2" doc:name="soapFlow2">
+		<http:inbound-endpoint exchange-pattern="request-response"
+			host="localhost" port="8083" path="bank/proxy" doc:name="HTTP"
+			transformer-refs="xslt" />
+		<cxf:proxy-service namespace="http://training/"
+			service="IBankServiceService" payload="body" wsdlLocation="wsdl/bank.wsdl"
+			doc:name="SOAP" />
+		<cxf:proxy-client payload="body"
+			enableMuleSoapHeaders="true" doc:name="SOAP" />
+		<http:outbound-endpoint exchange-pattern="request-response"
+			host="localhost" port="8082" path="bank" method="POST" doc:name="HTTP" />
+	</flow>
+	<flow name="soapClientFlow1" doc:name="soapClientFlow1">
+		<http:inbound-endpoint exchange-pattern="request-response"
+			host="localhost" port="8081" path="bank/client" doc:name="HTTP" />
+		<expression-component doc:name="Expression">
+            <![CDATA[
+	            import training.MoneyRequest;
+	
+	            MoneyRequest moneyRequest = new MoneyRequest();
+	            moneyRequest.sender = 'Sender';
+	            moneyRequest.receiver = 'Receiver';
+	            moneyRequest.amount = '100';
+	            moneyRequest.origin = 'US';
+	            moneyRequest.destination = 'IN';
+	            moneyRequest.receiverAccount = '123-456-789';
+	            moneyRequest.senderAccount = '789-456-123';
+	            moneyRequest.originCurreny = 'USD';
+	            moneyRequest.destCurreny = 'INR';
+	            payload = moneyRequest;
+            ]]>
+		</expression-component>
+
+		<http:outbound-endpoint exchange-pattern="request-response"
+			host="localhost" port="8083" path="bank/proxy" doc:name="HTTP">
+			<cxf:jaxws-client operation="sendMoney"
+				serviceClass="training.IBankService" port="IBankServicePort"
+				enableMuleSoapHeaders="true" doc:name="SOAP" />
+		</http:outbound-endpoint>
+		<mulexml:object-to-xml-transformer
+			doc:name="Object to XML" />
+	</flow>
+
+</mule>
