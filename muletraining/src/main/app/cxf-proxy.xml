@@ -23,6 +23,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 		<component class="training.BankService" doc:name="Java" />
 	</flow>
 	
+	
 	<flow name="soapFlow2" doc:name="soapFlow2">
 		<http:inbound-endpoint exchange-pattern="request-response"
 			host="localhost" port="8083" path="bank/proxy" doc:name="HTTP"
