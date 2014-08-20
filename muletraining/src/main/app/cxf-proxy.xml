@@ -22,6 +22,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 		<cxf:jaxws-service doc:name="SOAP" serviceClass="training.IBankService" />
 		<component class="training.BankService" doc:name="Java" />
 	</flow>
+	
 
 	<flow name="soapFlow2" doc:name="soapFlow2">
 		<http:inbound-endpoint exchange-pattern="request-response"
